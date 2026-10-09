@@ -39,13 +39,21 @@ it('logs in with the right password and gives one answer for any wrong one', fun
     $user = User::factory()->create(['email' => 'a@example.com', 'password' => 'secret-pass-1']);
     $same = 'These credentials do not match our records.';
 
+    // 401 with no field errors: the failure belongs to the email and password
+    // together, so the form shows it once, not under either field.
     $this->postJson('/api/login', ['email' => 'a@example.com', 'password' => 'wrong'])
-        ->assertJsonValidationErrors(['email' => $same]);
+        ->assertUnauthorized()
+        ->assertJsonPath('code', 'invalid_credentials')
+        ->assertJsonPath('message', $same)
+        ->assertJsonMissingPath('errors');
 
     // An unknown address gets the identical answer, so the form never
     // confirms which emails have accounts.
     $this->postJson('/api/login', ['email' => 'nobody@example.com', 'password' => 'wrong'])
-        ->assertJsonValidationErrors(['email' => $same]);
+        ->assertUnauthorized()
+        ->assertJsonPath('code', 'invalid_credentials')
+        ->assertJsonPath('message', $same)
+        ->assertJsonMissingPath('errors');
 
     $this->postJson('/api/login', ['email' => 'A@Example.com', 'password' => 'secret-pass-1'])
         ->assertOk()

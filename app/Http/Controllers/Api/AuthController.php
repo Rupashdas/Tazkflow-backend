@@ -12,7 +12,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller {
     public function register(RegisterRequest $request): JsonResponse {
@@ -29,10 +28,12 @@ class AuthController extends Controller {
 
     public function login(LoginRequest $request): JsonResponse {
         if (! Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
-
-            throw ValidationException::withMessages([
-                'email' => 'These credentials do not match our records.',
-            ]);
+            // Not a field error: the email and password fail together, and the
+            // same answer for an unknown email keeps accounts undiscoverable.
+            return response()->json([
+                'code'    => 'invalid_credentials',
+                'message' => 'These credentials do not match our records.',
+            ], 401);
         }
 
         if (! Auth::user()->is_active) {
