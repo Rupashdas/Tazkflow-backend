@@ -14,7 +14,7 @@ use Illuminate\Database\Seeder;
  *
  *   Tazkflow        owner admin@example.com; Rupash and Prottasha are Admins,
  *                Debos, Nishan and Tanjim are Members
- *   Acme Studio  owner Prottasha; Debos is a Member — so switching
+ *   Acme Studio  owner Prottasha; Debos and Rupash are Members — so switching
  *                workspaces and isolation can both be seen by hand
  */
 class DatabaseSeeder extends Seeder {
@@ -42,6 +42,7 @@ class DatabaseSeeder extends Seeder {
 
         $acme = $create($people['prottasha'], 'Acme Studio', 'acme-studio');
         $this->add($acme, $people['debos'], 'member');
+        $this->add($acme, $people['rupash'], 'member');
 
         $this->command->info('Seeded two workspaces (tazkflow, acme-studio). Every password is Pass123#.');
     }
