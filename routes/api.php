@@ -32,10 +32,10 @@ Route::middleware('throttle:invitation-link')->group(function () {
     Route::post('/invitations/{token}/accept', [InvitationController::class, 'accept']);
 });
 
-// The emailed verification link. `signed` rejects any id or hash that was
-// not produced by this server.
+// The emailed verification link. The controller checks the signature itself,
+// so a bad link lands on a frontend screen instead of a JSON 403.
 Route::get('/email/verify/{id}/{hash}', VerifyEmailController::class)
-    ->middleware(['signed', 'throttle:email-link'])
+    ->middleware('throttle:email-link')
     ->name('verification.verify');
 
 /*
