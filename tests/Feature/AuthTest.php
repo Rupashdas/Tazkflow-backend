@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\VerifyEmail;
+use App\Notifications\QueuedVerifyEmail;
 use Illuminate\Support\Facades\Notification;
 
 it('registers an account, signs the user in and sends a verification email', function () {
@@ -19,7 +19,7 @@ it('registers an account, signs the user in and sends a verification email', fun
         ->assertJsonPath('data.preferences.timezone', 'UTC');
 
     $user = User::sole();
-    Notification::assertSentTo($user, VerifyEmail::class);
+    Notification::assertSentTo($user, QueuedVerifyEmail::class);
 
     $this->getJson('/api/user')->assertOk()->assertJsonPath('data.id', $user->id);
 });
