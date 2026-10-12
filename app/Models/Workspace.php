@@ -11,10 +11,15 @@ use Illuminate\Validation\Rule;
 class Workspace extends Model {
     use SoftDeletes;
 
-    /** Paths the frontend or a future marketing site may need. */
+    /**
+     * Paths the frontend or a future marketing site may need. Every top-level
+     * route in tazkflow-frontend/src/router/index.js must be listed here, or a
+     * workspace with that slug can never be opened.
+     */
     public const RESERVED_SLUGS = [
         'api', 'admin', 'app', 'login', 'logout', 'register', 'signup', 'settings',
         'www', 'invite', 'invitations', 'share', 'help', 'support',
+        'welcome', 'workspaces', 'verify-email', 'email-verified', 'forgot-password', 'reset-password',
     ];
 
     protected $fillable = ['name', 'slug', 'owner_id'];
