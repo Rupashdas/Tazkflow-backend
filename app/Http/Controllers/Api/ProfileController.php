@@ -37,6 +37,18 @@ class ProfileController extends Controller {
         return new UserResource($user->load('preference'));
     }
 
+    /** DELETE /user/pending-email — stop an email change before the new inbox confirms it. */
+    public function cancelEmailChange(Request $request): UserResource {
+        $user = $request->user();
+
+        // No password: cancelling keeps the address the account already has.
+        // The link already sent stops working by itself, because its hash was
+        // made from the pending address.
+        $user->forceFill(['pending_email' => null])->save();
+
+        return new UserResource($user->load('preference'));
+    }
+
     public function updatePassword(Request $request): Response {
         $validated = $request->validate([
             'current_password' => ['required', 'current_password'],

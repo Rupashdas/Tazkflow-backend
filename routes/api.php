@@ -53,6 +53,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::put('/user/password', [ProfileController::class, 'updatePassword']);
     Route::post('/user/avatar', [ProfileController::class, 'uploadAvatar']);
     Route::delete('/user/avatar', [ProfileController::class, 'removeAvatar']);
+    Route::delete('/user/pending-email', [ProfileController::class, 'cancelEmailChange']);
 
     Route::get('/preferences', [PreferenceController::class, 'show']);
     Route::patch('/preferences', [PreferenceController::class, 'update']);
