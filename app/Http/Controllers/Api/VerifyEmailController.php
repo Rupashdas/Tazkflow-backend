@@ -38,6 +38,9 @@ class VerifyEmailController extends Controller {
             }
 
             $user->forceFill(['email' => $user->pending_email, 'pending_email' => null, 'email_verified_at' => now()])->save();
+
+            // Its own screen: "confirmed" alone would not tell them the address changed.
+            return redirect()->away($to . '?changed=1');
         } elseif (! $user->hasVerifiedEmail()) {
             $user->markEmailAsVerified();
             event(new Verified($user));

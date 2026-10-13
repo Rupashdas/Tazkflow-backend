@@ -52,3 +52,14 @@ it('sends a link for a deleted account to the frontend', function () {
 
     $this->get($link)->assertRedirect(emailVerifiedScreen('?error=link_invalid'));
 });
+
+it('switches a pending change to the new address and says so', function () {
+    $user = User::factory()->create(['email' => 'old@example.com', 'pending_email' => 'new@example.com']);
+
+    // verificationLink hashes getEmailForVerification(), which is the pending address.
+    $this->get(verificationLink($user))->assertRedirect(emailVerifiedScreen('?changed=1'));
+
+    expect($user->fresh())
+        ->email->toBe('new@example.com')
+        ->pending_email->toBeNull();
+});
