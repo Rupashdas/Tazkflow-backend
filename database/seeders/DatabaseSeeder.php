@@ -12,8 +12,9 @@ use Illuminate\Database\Seeder;
 /**
  * Two workspaces to click around in. Every password is Pass123#.
  *
- *   Tazkflow        owner admin@example.com; Rupash and Prottasha are Admins,
- *                Debos, Nishan and Tanjim are Members
+ *   Tazkflow     owner admin@example.com; Rupash and Prottasha are Admins,
+ *                Nishan is a Lead (a custom role), Debos is a Member and
+ *                Tanjim a Guest — one person per level of access
  *   Acme Studio  owner Prottasha; Debos and Rupash are Members — so switching
  *                workspaces and isolation can both be seen by hand
  */
@@ -36,9 +37,13 @@ class DatabaseSeeder extends Seeder {
         $tazkflow = $create($people['owner'], 'Tazkflow', 'tazkflow');
         $this->add($tazkflow, $people['rupash'], 'admin');
         $this->add($tazkflow, $people['prottasha'], 'admin');
-        foreach (['debos', 'nishan', 'tanjim'] as $key) {
-            $this->add($tazkflow, $people[$key], 'member');
-        }
+        $this->add($tazkflow, $people['debos'], 'member');
+        $this->add($tazkflow, $people['tanjim'], 'guest');
+
+        // Between Member and Admin, so "less access than you" can be tried by hand.
+        Role::create(['workspace_id' => $tazkflow->id, 'name' => 'lead', 'label' => 'Lead'])
+            ->syncCapabilities(['members.view', 'members.invite', 'members.manage', 'roles.view']);
+        $this->add($tazkflow, $people['nishan'], 'lead');
 
         $acme = $create($people['prottasha'], 'Acme Studio', 'acme-studio');
         $this->add($acme, $people['debos'], 'member');
