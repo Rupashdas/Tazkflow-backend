@@ -31,6 +31,9 @@ class MemberController extends Controller {
                 $user->where('name', 'like', $like)->orWhere('email', 'like', $like);
             }))
             ->orderBy(User::select('name')->whereColumn('users.id', 'workspace_members.user_id'))
+            // Names repeat. Without a unique tie-break, two pages can hold the
+            // same person and miss another.
+            ->orderBy('workspace_members.id')
             ->paginate($request->integer('per_page', 50));
 
         return MemberResource::collection($members);
@@ -39,6 +42,7 @@ class MemberController extends Controller {
     public function updateRole(Request $request, User $user, CurrentWorkspace $current): MemberResource {
         $membership = $this->membershipOf($user);
         $this->refuseForOwner($user, $current, 'The owner\'s role cannot be changed. Hand over ownership first.');
+        abort_if($user->is($request->user()), 422, 'You cannot change your own role.');
 
         $validated = $request->validate([
             'role_id' => ['required', 'integer', Rule::exists('roles', 'id')->where('workspace_id', $current->id())],
@@ -54,13 +58,17 @@ class MemberController extends Controller {
         return new MemberResource($membership->load(['user', 'role']));
     }
 
-    public function toggleActive(Request $request, User $user, CurrentWorkspace $current): MemberResource {
+    public function updateActive(Request $request, User $user, CurrentWorkspace $current): MemberResource {
         $membership = $this->membershipOf($user);
         $this->refuseForOwner($user, $current, 'The owner cannot be deactivated.');
         abort_if($user->is($request->user()), 422, 'You cannot deactivate yourself.');
         abort_if($current->ranksAbove($membership->role), 403, 'You cannot switch off someone with more access than you.');
 
-        $membership->update(['is_active' => ! $membership->is_active]);
+        // The value asked for, not a flip: two admins pressing Deactivate at
+        // once, or one double click, must not end up switching access back on.
+        $validated = $request->validate(['is_active' => ['required', 'boolean']]);
+
+        $membership->update(['is_active' => $validated['is_active']]);
 
         return new MemberResource($membership->load(['user', 'role']));
     }
