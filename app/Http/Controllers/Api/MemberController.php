@@ -19,13 +19,25 @@ use Illuminate\Validation\Rule;
  * email here would hand their other workspaces to this one's admin.
  */
 class MemberController extends Controller {
-    public function index(Request $request): AnonymousResourceCollection {
-        $request->validate(['per_page' => ['sometimes', 'integer', 'between:1,100']]);
+    public function index(Request $request, CurrentWorkspace $current): AnonymousResourceCollection {
+        $validated = $request->validate([
+            'per_page' => ['sometimes', 'integer', 'between:1,100'],
+            // A role of this workspace, or "none" for people without one.
+            'role'     => ['sometimes', $request->input('role') === 'none'
+                ? 'in:none'
+                : Rule::exists('roles', 'id')->where('workspace_id', $current->id())],
+            'status'   => ['sometimes', Rule::in(['active', 'deactivated'])],
+        ]);
 
         $search = $request->string('search')->trim()->value();
+        $role = $validated['role'] ?? null;
+        $status = $validated['status'] ?? null;
 
         $members = WorkspaceMember::query()
             ->with(['user', 'role'])
+            ->when($role === 'none', fn($query) => $query->whereNull('role_id'))
+            ->when($role !== null && $role !== 'none', fn($query) => $query->where('role_id', $role))
+            ->when($status !== null, fn($query) => $query->where('is_active', $status === 'active'))
             ->when($search !== '', fn($query) => $query->whereHas('user', function ($user) use ($search) {
                 $like = '%' . addcslashes($search, '%_\\') . '%';
                 $user->where('name', 'like', $like)->orWhere('email', 'like', $like);

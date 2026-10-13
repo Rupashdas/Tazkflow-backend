@@ -74,3 +74,51 @@ it('does not let anyone change their own role', function () {
 
     expect(membershipIn($this->workspace, $this->admin)->role_id)->toBe(roleIn($this->workspace, 'admin')->id);
 });
+
+it('lists only the people with the role asked for', function () {
+    $guest = joinAs($this->workspace, 'guest');
+    joinAs($this->workspace, 'member');
+
+    $this->actingAs($this->admin)
+        ->withHeader('X-Workspace', 'acme')
+        ->getJson('/api/members?role=' . roleIn($this->workspace, 'guest')->id)
+        ->assertOk()
+        ->assertJsonPath('data.*.id', [$guest->id]);
+});
+
+it('lists the people with no role', function () {
+    $roleless = joinAs($this->workspace, 'member');
+    membershipIn($this->workspace, $roleless)->update(['role_id' => null]);
+
+    $this->actingAs($this->admin)
+        ->withHeader('X-Workspace', 'acme')
+        ->getJson('/api/members?role=none')
+        ->assertOk()
+        ->assertJsonPath('data.*.id', [$roleless->id]);
+});
+
+it('lists active or deactivated people', function () {
+    $off = joinAs($this->workspace, 'member');
+    membershipIn($this->workspace, $off)->update(['is_active' => false]);
+
+    $this->actingAs($this->admin)
+        ->withHeader('X-Workspace', 'acme')
+        ->getJson('/api/members?status=deactivated')
+        ->assertOk()
+        ->assertJsonPath('data.*.id', [$off->id]);
+
+    $this->actingAs($this->admin)
+        ->withHeader('X-Workspace', 'acme')
+        ->getJson('/api/members?status=active')
+        ->assertOk()
+        ->assertJsonMissing(['id' => $off->id]);
+});
+
+it('refuses a role from another workspace and an unknown status', function () {
+    $other = app(CreateWorkspace::class)(User::factory()->create(), 'Other', 'other');
+
+    $this->actingAs($this->admin)
+        ->withHeader('X-Workspace', 'acme')
+        ->getJson('/api/members?role=' . roleIn($other, 'guest')->id . '&status=sleeping')
+        ->assertJsonValidationErrors(['role', 'status']);
+});
