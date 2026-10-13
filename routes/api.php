@@ -49,8 +49,9 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    Route::patch('/user', [ProfileController::class, 'update']);
-    Route::put('/user/password', [ProfileController::class, 'updatePassword']);
+    // throttle:account — see AppServiceProvider for what each request counts against.
+    Route::patch('/user', [ProfileController::class, 'update'])->middleware('throttle:account');
+    Route::put('/user/password', [ProfileController::class, 'updatePassword'])->middleware('throttle:account');
     Route::post('/user/avatar', [ProfileController::class, 'uploadAvatar']);
     Route::delete('/user/avatar', [ProfileController::class, 'removeAvatar']);
     Route::delete('/user/pending-email', [ProfileController::class, 'cancelEmailChange']);
@@ -59,7 +60,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::patch('/preferences', [PreferenceController::class, 'update']);
 
     Route::post('/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
-        ->middleware('throttle:6,1');
+        ->middleware('throttle:account');
 
     // Workspaces
     Route::get('/workspaces', [WorkspaceController::class, 'index']);

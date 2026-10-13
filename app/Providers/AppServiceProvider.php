@@ -49,5 +49,32 @@ class AppServiceProvider extends ServiceProvider {
         // Every invitation is an email from our address. A script must not be
         // able to flood one inbox or use up the daily sending limit for everyone.
         RateLimiter::for('invitations', fn(Request $request) => Limit::perHour(50)->by($request->user()->id));
+
+        // One limiter for the signed-in account routes, because email changes
+        // and resends must draw from one hourly count (a named limiter's
+        // counters never mix with another limiter's).
+        RateLimiter::for('account', function (Request $request) {
+            $user = $request->user();
+            $limits = [];
+
+            // A session left open must not become a way to guess the password.
+            if ($request->filled('current_password')) {
+                $limits[] = Limit::perMinute(6)->by("password:{$user->id}");
+            }
+
+            $resend = $request->is('api/email/verification-notification');
+            $newEmail = $request->has('email') && Str::lower(trim((string) $request->input('email'))) !== $user->email;
+
+            // Each of these mails a link to an address the person typed, which
+            // may be anyone's inbox.
+            if ($resend || $newEmail) {
+                $limits[] = Limit::perHour(10)->by("verification-mail:{$user->id}");
+            }
+            if ($resend) {
+                $limits[] = Limit::perMinute(2)->by("resend:{$user->id}");
+            }
+
+            return $limits ?: Limit::none();
+        });
     }
 }
