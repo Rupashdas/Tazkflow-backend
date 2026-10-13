@@ -20,6 +20,7 @@ class Workspace extends Model {
         'api', 'admin', 'app', 'login', 'logout', 'register', 'signup', 'settings',
         'www', 'invite', 'invitations', 'share', 'help', 'support',
         'welcome', 'workspaces', 'verify-email', 'email-verified', 'forgot-password', 'reset-password',
+        'account',
     ];
 
     protected $fillable = ['name', 'slug', 'owner_id'];

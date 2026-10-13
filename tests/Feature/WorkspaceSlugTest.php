@@ -10,6 +10,7 @@ dataset('frontend paths', [
     ['Email verified', 'email-verified'],
     ['Forgot password', 'forgot-password'],
     ['Reset password', 'reset-password'],
+    ['Account', 'account'],
 ]);
 
 it('never derives a slug that is a frontend path', function (string $name, string $path) {
